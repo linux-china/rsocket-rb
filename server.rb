@@ -1,8 +1,8 @@
-require './lib/rsocket'
+require './lib/rsocket/responder'
 require './lib/rsocket/payload'
 
 set :schema, 'tcp'
-set :port, 42253
+set :port, 42252
 
 
 # RSocket request/response
