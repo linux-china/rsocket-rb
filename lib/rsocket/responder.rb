@@ -3,24 +3,28 @@ require 'eventmachine'
 
 
 module RSocket
-  OPTIONS = Hash[:port => 42252, :schema => "tcp", :host => '0.0.0.0']
 
   module RSocketResponder
 
     def set(name, value)
-      OPTIONS[name] = value
+      $rsocket_server.set(name, value)
     end
   end
 
   class RSocketServer
-    attr_accessor :connections
+    attr_accessor :connections, :option
 
     def initialize
       @connections = []
+      @option = Hash[:port => 42252, :schema => "tcp", :host => '0.0.0.0']
+    end
+
+    def set(name, value)
+      @option[name] = value
     end
 
     def start
-      @signature = EventMachine.start_server(RSocket::OPTIONS[:host], RSocket::OPTIONS[:port], RSocket::Connection) do |con|
+      @signature = EventMachine.start_server(@option[:host], @option[:port], RSocket::Connection) do |con|
         con.server = self
       end
     end
@@ -65,12 +69,13 @@ module RSocket
 
 end
 
+$rsocket_server = RSocket::RSocketServer.new
+
 extend RSocket::RSocketResponder
 
-$rsocket_server = RSocket::RSocketServer.new
 at_exit do
   EventMachine::run {
     $rsocket_server.start
-    puts "New server listening #{RSocket::OPTIONS[:port]}"
+    puts "New server listening #{$rsocket_server.option[:port]}"
   }
 end
