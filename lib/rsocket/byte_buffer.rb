@@ -17,6 +17,15 @@ module RSocket
       @buffer.clear
     end
 
+    def has_remaining
+      @pos < @size
+    end
+
+    def append(data)
+      @buffer.push(*data)
+      @size = @buffer.length
+    end
+
     # get byte
     def get
       if @pos < @size
@@ -45,15 +54,15 @@ module RSocket
 
     # get int
     def get_int32
-      bytes_to_integer(get_bytes(4))
+      ByteBuffer.bytes_to_integer(get_bytes(4))
     end
 
     def get_int24
-      bytes_to_integer(get_bytes(3))
+      ByteBuffer.bytes_to_integer(get_bytes(3))
     end
 
     def get_int16
-      bytes_to_integer(get_bytes(2))
+      ByteBuffer.bytes_to_integer(get_bytes(2))
     end
 
 
@@ -72,15 +81,15 @@ module RSocket
     end
 
     def put_int32(integer)
-      integer_to_bytes(integer).each(&method(:put))
+      ByteBuffer.integer_to_bytes(integer).each(&method(:put))
     end
 
     def put_int24(integer)
-      integer_to_bytes(integer)[1..3].each(&method(:put))
+      ByteBuffer.integer_to_bytes(integer)[1..3].each(&method(:put))
     end
 
     def put_int16(integer)
-      integer_to_bytes(integer)[2..3].each(&method(:put))
+      ByteBuffer.integer_to_bytes(integer)[2..3].each(&method(:put))
     end
 
     def rewind
@@ -101,7 +110,7 @@ module RSocket
     # convert integer to bytes
     # @param i [Integer]
     # @return [Array]
-    def integer_to_bytes(i)
+    def self.integer_to_bytes(i)
       bj = Array.new(4, 0x00)
       bj[0] = (i & 0xff000000) >> 24
       bj[1] = (i & 0xff0000) >> 16
@@ -113,7 +122,7 @@ module RSocket
     # convert bytes to integer
     # @param bytes [Array]
     # @return [Integer]
-    def bytes_to_integer(bytes)
+    def self.bytes_to_integer(bytes)
       integer = 0
       offset = 0
       bytes.reverse.each do |x|
