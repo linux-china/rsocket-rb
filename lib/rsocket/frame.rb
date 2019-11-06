@@ -21,7 +21,7 @@ module RSocket
       @frame_type = frame_type
       @metadata = nil
       @data = nil
-      @flags = 0
+      @flags = 0x00
     end
 
     # @return [Array<Byte>] frame byte array
@@ -65,7 +65,7 @@ module RSocket
         frame = LeaseFrame.new
         frame.parse_header(buffer)
       when :KEEPALIVE
-        frame = KeepAliveFrame.new
+        frame = KeepAliveFrame.new(flags)
         frame.parse_header(buffer)
       when :REQUEST_RESPONSE
         frame = RequestResponseFrame.new(stream_id)
@@ -282,7 +282,7 @@ module RSocket
         buffer = RSocket::ByteBuffer.new(bytes)
         buffer.put_int24(frame_length)
         buffer.put_int32(@stream_id)
-        buffer.put(((0x0A << 2) | (@metadata.nil? ? 0x00 : 0x01)))
+        buffer.put(((0x0A << 2) | (has_metadata ? 0x01 : 0x00)))
         buffer.put(@flags)
         if has_metadata
           buffer.put_int24(metadata_length)
