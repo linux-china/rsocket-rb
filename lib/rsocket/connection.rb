@@ -76,11 +76,8 @@ module RSocket
         when :KEEPALIVE
           # Respond with KEEPALIVE
           if flags[7] == 1
-            keep_alive_frame = KeepAliveFrame.new(0x00)
-            keep_alive_frame.last_received_position = frame.last_received_position
-            EventMachine.defer(proc {
-              send_frame(keep_alive_frame)
-            })
+            frame_bytes[8] = 0
+            send_data(frame_bytes.pack('C*'))
           end
 
         else
