@@ -40,9 +40,11 @@ module RSocket
 
     # get bytes
     def get_bytes(len)
-      if @pos + len <= @size
-        @pos = @pos + len
-        @buffer[(@pos - len)..(@pos - 1)]
+      if len > 0
+        if @pos + len <= @size
+          @pos = @pos + len
+          @buffer[(@pos - len)..(@pos - 1)]
+        end
       end
     end
 
@@ -50,6 +52,11 @@ module RSocket
       if @pos <= @size
         @buffer[@pos, @size]
       end
+    end
+
+    # get int
+    def get_int64
+      ByteBuffer.bytes_to_integer(get_bytes(8))
     end
 
     # get int
@@ -78,6 +85,10 @@ module RSocket
         @buffer[@pos] = x
         @pos = @pos + 1
       end
+    end
+
+    def put_int64(integer)
+      ByteBuffer.long_to_bytes(integer).each(&method(:put))
     end
 
     def put_int32(integer)
@@ -116,6 +127,22 @@ module RSocket
       bj[1] = (i & 0xff0000) >> 16
       bj[2] = (i & 0xff00) >> 8
       bj[3] = i & 0xff
+      bj
+    end
+
+    # convert integer to bytes
+    # @param i [Integer]
+    # @return [Array]
+    def self.long_to_bytes(i)
+      bj = Array.new(8, 0x00)
+      bj[0] = (i & 0xff00000000000000) >> 56
+      bj[1] = (i & 0xff000000000000) >> 48
+      bj[2] = (i & 0xff0000000000) >> 40
+      bj[3] = (i & 0xff00000000) >> 32
+      bj[4] = (i & 0xff000000) >> 24
+      bj[5] = (i & 0xff0000) >> 16
+      bj[6] = (i & 0xff00) >> 8
+      bj[7] = i & 0xff
       bj
     end
 
