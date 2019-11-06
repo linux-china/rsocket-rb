@@ -177,14 +177,29 @@ module RSocket
   end
 
   class KeepAliveFrame < Frame
-    def initialize
+    attr_accessor :last_received_position, :flags
+
+    def initialize(flags)
       super(0, :KEEPALIVE)
       @last_received_position = 0
+      @flags = flags
     end
 
     #@param buffer [RSocket::ByteBuffer]
     def parse_header(buffer)
       @last_received_position = buffer.get_int64
+    end
+
+    def serialize
+      frame_length = 14
+      bytes = Array.new(3 + frame_length)
+      buffer = RSocket::ByteBuffer.new(bytes)
+      buffer.put_int24(frame_length)
+      buffer.put_int32(0)
+      buffer.put(0x03 << 2)
+      buffer.put(@flags)
+      buffer.put_int64(@last_received_position)
+      bytes
     end
 
   end
