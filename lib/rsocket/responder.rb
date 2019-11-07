@@ -73,7 +73,12 @@ module RSocket
       end
 
       def fire_and_forget(payload)
-
+        EventMachine.defer(proc {
+          fnf_frame = RequestFnfFrame.new(next_stream_id)
+          fnf_frame.metadata = payload.metadata
+          fnf_frame.data = payload.data
+          @parent.send_frame(fnf_frame)
+        })
       end
 
       #@param payload [RSocket::Payload]
@@ -91,7 +96,13 @@ module RSocket
       end
 
       def metadata_push(payloads)
-        raise 'request_channel not implemented'
+        if !payload.metadata.nil? && payload.metadata.length > 0
+          EventMachine.defer(proc {
+            metadata_push_frame = MetadataPushFrame.new
+            metadata_push_frame.metadata = payload.metadata
+            @parent.send_frame(metadata_push_frame)
+          })
+        end
       end
 
       def dispose
