@@ -79,6 +79,7 @@ EventMachine.run {
 
 ##### Others
  - [x] Composite Metadata
+ - [x] Timeout support
  - [ ] Resume
  - [x] Keepalive
  - [ ] Fragmentation
@@ -91,6 +92,6 @@ EventMachine.run {
 
 # References
 
-* EventMachine Code Snippets: https://github.com/eventmachine/eventmachine/wiki/Code-Snippets
+* RSocket Home: http://rsocket.io/
 * EventMachine: fast, simple event-processing library for Ruby programs https://github.com/eventmachine/eventmachine
-* Yard Cheat Sheet: https://kapeli.com/cheat_sheets/Yard.docset/Contents/Resources/Documents/index
+* RxRuby: https://github.com/ReactiveX/RxRuby
