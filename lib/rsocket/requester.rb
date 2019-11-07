@@ -76,6 +76,7 @@ module RSocket
       request_response_frame.metadata = "metadata".unpack("C*")
       send_frame(request_response_frame)
       response_subject = Rx::AsyncSubject.new
+      # todo add timeout support
       @streams[request_response_frame.stream_id] = response_subject
       response_subject
     end
@@ -116,7 +117,10 @@ module RSocket
 
 
     def next_stream_id
-      @next_stream_id = @next_stream_id + 2
+      begin
+        @next_stream_id = @next_stream_id + 2
+      end until @streams[@next_stream_id].nil?
+      @next_stream_id
     end
   end
 
