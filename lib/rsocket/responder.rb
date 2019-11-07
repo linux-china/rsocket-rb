@@ -1,6 +1,6 @@
 require 'rubygems'
 require 'eventmachine'
-require 'rsocket/base'
+require 'rsocket/abstract_rsocket'
 require 'rsocket/frame'
 require 'rsocket/connection'
 
