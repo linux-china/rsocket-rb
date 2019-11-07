@@ -60,7 +60,7 @@ module RSocket
     RSOCKET_ROUTING = WellKnownType.new("message/x.rsocket.routing.v0", 0x7E)
     RSOCKET_COMPOSITE_METADATA = WellKnownType.new("message/x.rsocket.composite-metadata.v0", 0x7F)
 
-    def add_wellknown(name, identifier)
+    def self.add_wellknown(name, identifier)
       WellKnownType.new(name, identifier)
     end
   end
