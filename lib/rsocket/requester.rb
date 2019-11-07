@@ -5,21 +5,23 @@ require 'rsocket/connection'
 require 'rsocket/frame'
 require 'rsocket/payload'
 require 'uri'
+require 'rx'
 
 module RSocket
 
   class RSocketRequester < RSocket::DuplexConnection
     include RSocket::AbstractRSocket
 
-    def initialize(metadata_encoding, data_encoding, setup_payload, responder_handler)
+    #@param resp_handler_block [Proc]
+    def initialize(metadata_encoding, data_encoding, setup_payload, resp_handler_block)
       @metadata_encoding = metadata_encoding
       @data_encoding = data_encoding
       @setup_payload = setup_payload
-      @responder_handler = responder_handler
       @next_stream_id = -1
       @mode = :CLIENT
       @onclose = Rx::Subject.new
-      @responder_handler = responder_handler
+      @responder_handler = Struct.new(:data_encoding).new(@data_encoding)
+      @responder_handler.instance_eval(&resp_handler_block)
     end
 
     def post_init
@@ -91,9 +93,9 @@ module RSocket
     end
   end
 
-  def self.connect(rsocket_uri, mime_type_encoding = "text/plain", data_type_encoding = "text/plain", setup_payload = nil, responder_handler = nil)
+  def self.connect(rsocket_uri, mime_type_encoding = "text/plain", data_type_encoding = "text/plain", setup_payload = nil, &resp_handler_block)
     uri = URI.parse(rsocket_uri)
-    EventMachine::connect uri.hostname, uri.port, RSocketRequester, mime_type_encoding, data_type_encoding, setup_payload, responder_handler
+    EventMachine::connect uri.hostname, uri.port, RSocketRequester, mime_type_encoding, data_type_encoding, setup_payload, resp_handler_block
   end
 
 end
