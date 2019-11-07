@@ -18,12 +18,12 @@ module RSocket
 
     # @return [String, nil] the contents of our object or nil
     def metadata_utf8
-      @metadata.nil? ? nil : @metadata.pack('c*')
+      @metadata.nil? ? nil : @metadata.pack('C*')
     end
 
     # @return [String, nil] the contents of our object or nil
     def data_utf8
-      @data.nil? ? nil : @data.pack('c*')
+      @data.nil? ? nil : @data.pack('C*')
     end
 
     # @return [Integer] bytes length
