@@ -114,7 +114,7 @@ module RSocket
       @major_version = RSocket::MAJOR_VERSION
       @minor_version = RSocket::MINOR_VERSION
       @keepalive_time = 3000
-      @max_life_time = 2147483647
+      @max_life_time = 0x7FFFFFFF
     end
 
     #@param buffer [RSocket::ByteBuffer]
@@ -135,19 +135,21 @@ module RSocket
       has_metadata = !@metadata.nil? && @metadata.length > 0
       metadata_length = has_metadata ? @metadata.length : 0
       data_length = @data.nil? ? 0 : @data.length
-      frame_length = 6 + 2 + 2 + 4 + 4 + 2 + @metadata_encoding.length + 1 + @data_encoding.length + 1 + (has_metadata ? metadata_length + 3 : 0) + data_length
+      frame_length = 6 + 2 + 2 + 4 + 4 + @metadata_encoding.length + 1 + @data_encoding.length + 1 + (has_metadata ? metadata_length + 3 : 0) + data_length
       bytes = Array.new(3 + frame_length, 0x00)
       buffer = RSocket::ByteBuffer.new(bytes)
       buffer.put_int24(frame_length)
       buffer.put_int32(0)
-      buffer.put(((0x01 << 2) | (@metadata.nil? ? 0x00 : 0x01)))
+      buffer.put((0x01 << 2) | (has_metadata ? 0x01 : 0x00))
       buffer.put(0) # todo resume + lease
+      buffer.put_int16(@major_version)
+      buffer.put_int16(@minor_version)
       buffer.put_int32(@keepalive_time)
       buffer.put_int32(@max_life_time)
-      #ignore token
-      buffer.put(@metadata_encoding.length)
+      #ignore resume token
+      buffer.put(@metadata_encoding.length & 0xFF)
       buffer.put_bytes(@metadata_encoding.unpack("c*"))
-      buffer.put(@data_encoding.length)
+      buffer.put(@data_encoding.length & 0xFF)
       buffer.put_bytes(@data_encoding.unpack("c*"))
       if has_metadata
         buffer.put_int24(metadata_length)
@@ -156,6 +158,7 @@ module RSocket
       if !@data.nil? && @data.length > 0
         buffer.put_bytes(@data)
       end
+      p bytes
       bytes
     end
 
