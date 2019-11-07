@@ -32,8 +32,8 @@ module RSocket
     end
   end
 
-  class ConnectionSetupPayload
-    attr_accessor :metadata_mime_type, :data_mime_type, :metadata, :data
+  class ConnectionSetupPayload < Payload
+    attr_accessor :metadata_mime_type, :data_mime_type
 
     def initialize(metadata_mime_type = "text/plain", data_mime_type = "text/plain", data, metadata)
       @metadata_mime_type = metadata_mime_type
@@ -41,6 +41,7 @@ module RSocket
       @data = data
       @metadata = metadata
     end
+
   end
 
 end
