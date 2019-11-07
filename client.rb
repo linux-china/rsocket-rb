@@ -14,5 +14,11 @@ EventMachine.run {
     end
   end
   rsocket.request_response(payload_of("request", "response"))
+      .subscribe(Rx::Observer.configure do |observer|
+        observer.on_next { |payload| puts payload.data_utf8 }
+        observer.on_completed { puts "completed" }
+        observer.on_error { |error| puts error }
+      end)
+
   # rsocket.fire_and_forget(payload_of("fire","forget"))
 }
