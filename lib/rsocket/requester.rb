@@ -10,6 +10,10 @@ require 'securerandom'
 
 module RSocket
 
+  class EmptyAbstractHandler
+    include RSocket::AbstractRSocket
+  end
+
   class RSocketRequester < RSocket::DuplexConnection
     include RSocket::AbstractRSocket
 
@@ -23,10 +27,13 @@ module RSocket
       @mode = :CLIENT
       @onclose = Rx::Subject.new
       @streams = {}
-      unless resp_handler_block.nil?
+      if resp_handler_block.nil?
+        @responder_handler = EmptyAbstractHandler.new
+      else
         @responder_handler = Struct.new(:data_encoding).new(@data_encoding)
         @responder_handler.instance_eval(&resp_handler_block)
       end
+
     end
 
     def post_init
