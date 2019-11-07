@@ -64,6 +64,31 @@ EventMachine.run {
 }
 ```
 
+# Todo 
+
+#### Transport
+ - [x] TCP
+ - [ ] Websocket
+
+#### Duplex Socket
+ - [x] MetadataPush
+ - [x] RequestFNF
+ - [x] RequestResponse
+ - [x] RequestStream
+ - [x] RequestChannel
+
+##### Others
+ - [x] Composite Metadata
+ - [ ] Resume
+ - [x] Keepalive
+ - [ ] Fragmentation
+ - [ ] Cancel
+ - [x] Error
+ - [ ] Flow Control: RequestN
+ - [ ] Flow Control: Lease
+ - [x] Load Balance
+
+
 # References
 
 * EventMachine Code Snippets: https://github.com/eventmachine/eventmachine/wiki/Code-Snippets
