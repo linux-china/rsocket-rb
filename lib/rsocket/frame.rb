@@ -114,7 +114,7 @@ module RSocket
       @major_version = RSocket::MAJOR_VERSION
       @minor_version = RSocket::MINOR_VERSION
       @keepalive_time = 3000
-      @max_life_time = 2, 147, 483, 647
+      @max_life_time = 2147483647
     end
 
     #@param buffer [RSocket::ByteBuffer]
@@ -133,10 +133,10 @@ module RSocket
     def serialize
       # without token
       has_metadata = !@metadata.nil? && @metadata.length > 0
-      metadata_length = has_metadata ? 0 : @metadata.length
+      metadata_length = has_metadata ? @metadata.length: 0
       data_length = @data.nil? ? 0 : @data.length
       frame_length = 6 + 2 + 2 + 4 + 4 + 2 + @metadata_encoding.length + 1 + @data_encoding.length + 1 + (has_metadata ? metadata_length + 3 : 0) + data_length
-      bytes = Array.new(9, 0x00)
+      bytes = Array.new(3 + frame_length , 0x00)
       buffer = RSocket::ByteBuffer.new(bytes)
       buffer.put_int24(frame_length)
       buffer.put_int32(0)
