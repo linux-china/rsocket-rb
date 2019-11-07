@@ -8,7 +8,7 @@ module RSocket
       @source = source
     end
 
-    def get_source
+    def to_bytes
       @source
     end
 
@@ -22,6 +22,7 @@ module RSocket
       bytes[1, 3] = RSocket::ByteBuffer.integer_to_bytes(content_length)[1..3]
       bytes[4, content_length] = content
       @source.push(*bytes)
+      self
     end
 
     # @param mime_type [String]
@@ -36,6 +37,7 @@ module RSocket
       bytes[mime_type_length + 1, 3] = RSocket::ByteBuffer.integer_to_bytes(content_length)[1..3]
       bytes[mime_type_length + 4, content_length] = content
       @source.push(*bytes)
+      self
     end
 
     # @return [Array<RSocket::CompositeMetadataEntry>]
@@ -119,6 +121,21 @@ module RSocket
       end
       tags
     end
+  end
+
+  #@return [ExplicitMimeTypeEntry]
+  # @param routing [String]
+  def self.routing_metadata(routing, *tags)
+    bytes = []
+    routing_bytes = routing.unpack("C*")
+    bytes.append(routing_bytes.length & 0x7F)
+    bytes.append(*routing_bytes)
+    tags.each { |tag|
+      tag_bytes = tag.unpack("C*")
+      bytes.append(tag.length & 0x7F)
+      bytes.append(*tag_bytes)
+    }
+    ReservedMimeTypeEntry.new(0x7E, bytes)
   end
 
 end
