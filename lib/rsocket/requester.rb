@@ -24,6 +24,7 @@ module RSocket
       @onclose = Rx::Subject.new
       @responder_handler = Struct.new(:data_encoding).new(@data_encoding)
       @responder_handler.instance_eval(&resp_handler_block)
+      @streams = {}
     end
 
     def post_init
@@ -45,16 +46,38 @@ module RSocket
       close_connection(true)
     end
 
+    #@param payload_frame [RSocket:PayloadFrame]
     def receive_response(payload_frame)
-      p payload_frame
+      stream_id = payload_frame.stream_id
+      #error frame type
+      if payload_frame.frame_type == :ERROR
+        subject = @streams.delete(stream_id)
+        unless subject.nil?
+          subject.on_error(payload_frame.error_code)
+        end
+      end
+      if payload_frame.is_completed
+        subject = @streams.delete(stream_id)
+        unless subject.nil?
+          subject.on_next(1)
+          subject.on_completed
+        end
+      else
+        subject = @streams[stream_id]
+        unless subject.nil?
+          subject.on_next(1)
+        end
+      end
     end
 
     def request_response(payload)
       request_response_frame = RequestResponseFrame.new(next_stream_id)
       request_response_frame.data = "Hello".unpack("C*")
       request_response_frame.metadata = "metadata".unpack("C*")
-      # todo callback implementation
       send_frame(request_response_frame)
+      response_subject = Rx::AsyncSubject.new
+      @streams[request_response_frame.stream_id] = response_subject
+      response_subject
     end
 
     #@param payload [RSocket::Payload]
@@ -71,7 +94,9 @@ module RSocket
       stream_frame = RequestStreamFrame.new(next_stream_id)
       stream_frame.metadata = payload.metadata
       stream_frame.data = payload.data
-      send_frame(stream_frame)
+      response_subject = Rx::AsyncSubject.new
+      @streams[stream_frame.stream_id] = response_subject
+      response_subject
     end
 
     def request_channel(payloads)
