@@ -132,12 +132,11 @@ module RSocket
     end
   end
 
-
 end
 
-$rsocket_server = RSocket::RSocketServer.new
-
 include RSocket::RSocketResponderHandler
+
+$rsocket_server = RSocket::RSocketServer.new
 
 at_exit do
   EventMachine::run {
