@@ -22,9 +22,11 @@ module RSocket
       @next_stream_id = -1
       @mode = :CLIENT
       @onclose = Rx::Subject.new
-      @responder_handler = Struct.new(:data_encoding).new(@data_encoding)
-      @responder_handler.instance_eval(&resp_handler_block)
       @streams = {}
+      unless resp_handler_block.nil?
+        @responder_handler = Struct.new(:data_encoding).new(@data_encoding)
+        @responder_handler.instance_eval(&resp_handler_block)
+      end
     end
 
     def post_init
@@ -82,7 +84,7 @@ module RSocket
       # todo make it configurable
       EventMachine::Timer.new(15) do
         subject = @streams.delete(stream_id)
-        unless  subject.nil?
+        unless subject.nil?
           subject.on_error("Timeout: 15s")
         end
       end
@@ -132,9 +134,9 @@ module RSocket
     end
   end
 
-  def self.connect(rsocket_uri, mime_type_encoding = "text/plain", data_type_encoding = "text/plain", setup_payload = nil, &resp_handler_block)
+  def self.connect(rsocket_uri, metadata_encoding = "message/x.rsocket.composite-metadata.v0", data_encoding = "text/plain", setup_payload = nil, &resp_handler_block)
     uri = URI.parse(rsocket_uri)
-    EventMachine::connect uri.hostname, uri.port, RSocketRequester, mime_type_encoding, data_type_encoding, setup_payload, resp_handler_block
+    EventMachine::connect uri.hostname, uri.port, RSocketRequester, metadata_encoding, data_encoding, setup_payload, resp_handler_block
   end
 
 end
