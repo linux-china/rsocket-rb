@@ -79,6 +79,7 @@ EventMachine.run {
 
 ##### Others
  - [x] Composite Metadata
+ - [ ] TCK Test
  - [x] Timeout support
  - [ ] Resume
  - [x] Keepalive
