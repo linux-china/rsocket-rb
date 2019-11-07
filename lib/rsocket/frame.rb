@@ -133,10 +133,10 @@ module RSocket
     def serialize
       # without token
       has_metadata = !@metadata.nil? && @metadata.length > 0
-      metadata_length = has_metadata ? @metadata.length: 0
+      metadata_length = has_metadata ? @metadata.length : 0
       data_length = @data.nil? ? 0 : @data.length
       frame_length = 6 + 2 + 2 + 4 + 4 + 2 + @metadata_encoding.length + 1 + @data_encoding.length + 1 + (has_metadata ? metadata_length + 3 : 0) + data_length
-      bytes = Array.new(3 + frame_length , 0x00)
+      bytes = Array.new(3 + frame_length, 0x00)
       buffer = RSocket::ByteBuffer.new(bytes)
       buffer.put_int24(frame_length)
       buffer.put_int32(0)
@@ -207,7 +207,28 @@ module RSocket
   class RequestResponseFrame < Frame
     def initialize(stream_id)
       super(stream_id, :REQUEST_RESPONSE)
+      @flags = 0
     end
+
+    def serialize
+      has_metadata = !@metadata.nil? && @metadata.length > 0
+      frame_length = 4 + 2 + (has_metadata ? @metadata.length + 3 : 0) + (@data.nil? ? 0 : @data.length)
+      bytes = Array.new(3 + frame_length)
+      buffer = RSocket::ByteBuffer.new(bytes)
+      buffer.put_int24(frame_length)
+      buffer.put_int32(@stream_id)
+      buffer.put(0x04 << 2 | (has_metadata ? 0x01 : 0x00))
+      buffer.put(@flags)
+      if has_metadata
+        buffer.put_int24(@metadata.length)
+        buffer.put_bytes(@metadata)
+      end
+      unless @data.nil?
+        buffer.put_bytes(@data)
+      end
+      bytes
+    end
+
   end
 
   class RequestFnfFrame < Frame
