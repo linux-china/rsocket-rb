@@ -7,10 +7,12 @@ require 'rsocket/connection'
 
 module RSocket
 
+  $rsocket_options = {}
+
   module RSocketResponderHandler
 
     def set(name, value)
-      $rsocket_server.set(name, value)
+      $rsocket_options[name] = value
     end
 
   end
@@ -99,13 +101,10 @@ module RSocket
   class RSocketServer
     attr_accessor :connections, :option
 
-    def initialize
+    def initialize(&block)
       @connections = []
       @option = Hash[:port => 42252, :schema => "tcp", :host => '0.0.0.0']
-    end
-
-    def set(name, value)
-      @option[name] = value
+      self.instance_eval(&block)
     end
 
     def start
@@ -132,15 +131,4 @@ module RSocket
     end
   end
 
-end
-
-include RSocket::RSocketResponderHandler
-
-$rsocket_server = RSocket::RSocketServer.new
-
-at_exit do
-  EventMachine::run {
-    $rsocket_server.start
-    puts "New server listening #{$rsocket_server.option[:port]}"
-  }
 end
