@@ -1,14 +1,102 @@
 require 'rubygems'
 require 'eventmachine'
+require 'rsocket/base'
+require 'rsocket/frame'
+require 'rsocket/connection'
 
 
 module RSocket
 
-  module RSocketResponder
+  module RSocketResponderHandler
+    extended RSocket::AbstractRSocket
 
     def set(name, value)
       $rsocket_server.set(name, value)
     end
+
+    def accept(setup_payload, sending_rsocket)
+      sending_rsocket
+    end
+
+  end
+
+  class RSocketResponder < RSocket::DuplexConnection
+    include RSocketResponderHandler
+
+    attr_accessor :server, :sending_rsocket
+
+    def initialize(server)
+      @onclose = Rx::Subject.new
+      @next_stream_id = 0
+      @mode = :SERVER
+      @server = server
+    end
+
+    def unbind
+      puts "-- someone left!"
+      @server.connections.delete(self)
+    end
+
+    def post_init
+      puts "-- someone connected on server!"
+      @server.connections << self
+      @sending_rsocket = SendingRSocket.new(self)
+    end
+
+    #@param setup_frame [RSocket::SetupFrame]
+    def receive_setup(setup_frame)
+      setup_payload = ConnectionSetupPayload.new(setup_frame.metadata_encoding, setup_frame.data_encoding, setup_frame.metadata, setup_frame.data)
+      @sending_rsocket = accept(setup_payload, @sending_rsocket)
+      if @sending_rsocket.nil?
+        dispose
+      end
+    end
+
+    def dispose
+      close_connection(true)
+      @onclose.on_completed
+    end
+
+    def next_stream_id
+      @next_stream_id = @next_stream_id + 2
+    end
+
+
+    class SendingRSocket
+      include RSocket::AbstractRSocket
+
+      def initialize(parent)
+        @parent = parent
+      end
+
+      def fire_and_forget(payload)
+
+      end
+
+      #@param payload [RSocket::Payload]
+      #@return [Rx::Observable]
+      def request_response(payload)
+        raise 'request_response not implemented'
+      end
+
+      def request_stream(payload)
+        raise 'request_stream not implemented'
+      end
+
+      def request_channel(payloads)
+        raise 'request_channel not implemented'
+      end
+
+      def metadata_push(payloads)
+        raise 'request_channel not implemented'
+      end
+
+      def dispose
+        @parent.dispose
+      end
+
+    end
+
   end
 
   class RSocketServer
@@ -24,9 +112,7 @@ module RSocket
     end
 
     def start
-      @signature = EventMachine.start_server(@option[:host], @option[:port], RSocket::Connection) do |con|
-        con.server = self
-      end
+      @signature = EventMachine.start_server(@option[:host], @option[:port], RSocket::RSocketResponder,self)
     end
 
     def stop
@@ -49,29 +135,12 @@ module RSocket
     end
   end
 
-  class Connection < EventMachine::Connection
-    include RSocketResponder
-    attr_accessor :server
-
-    def unbind
-      server.connections.delete(self)
-    end
-
-    def post_init
-      puts "-- someone connected to the echo server!"
-    end
-
-    def receive_data(data)
-      send_data ">>> you sent: #{data}"
-      p data.unpack('C*')
-    end
-  end
 
 end
 
 $rsocket_server = RSocket::RSocketServer.new
 
-extend RSocket::RSocketResponder
+include RSocket::RSocketResponderHandler
 
 at_exit do
   EventMachine::run {
