@@ -109,7 +109,7 @@ module RSocket
   class TaggingMetadata
 
     def initialize(mime_type_entry)
-      @source = mime_type_entry.content
+      @source = mime_type_entry.get_content
     end
 
     def tags
