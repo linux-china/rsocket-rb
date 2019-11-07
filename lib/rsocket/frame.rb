@@ -309,6 +309,10 @@ module RSocket
       @flags = flags
     end
 
+    def is_completed
+      @flags[6] == 1
+    end
+
     def serialize
       if @metadata.nil? && @data.nil?
         bytes = Array.new(3 + 6, 0x00)
