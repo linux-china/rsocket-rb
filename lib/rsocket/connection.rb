@@ -7,7 +7,7 @@ module RSocket
 
   class DuplexConnection < EventMachine::Connection
 
-    attr_accessor :mode
+    attr_accessor :mode, :responder_handler
 
     def receive_data(data)
       frame_bytes = data.unpack('C*')
@@ -27,11 +27,13 @@ module RSocket
         when :SETUP
           receive_setup(frame)
         when :REQUEST_RESPONSE, :REQUEST_FNF, :REQUEST_STREAM, :REQUEST_CHANNEL, :METADATA_PUSH
-          if @mode == :SERVER && frame.stream_id % 2 == 1
-            receive_request(frame)
-          else
-            receive_response(frame)
-          end
+          receive_request(frame)
+        when :PAYLOAD, :ERROR
+          receive_response(frame)
+        when :CANCEL
+          # cancel logic
+        when :REQUEST_N
+          # request N
         when :KEEPALIVE
           # Respond with KEEPALIVE
           if flags[7] == 1
@@ -48,14 +50,15 @@ module RSocket
 
     end
 
-    def receive_response(frame)
+    def receive_response(payload_frame)
       raise "not implemented for message pair"
     end
 
     def receive_request(frame)
+      request_payload = Payload.new(frame.data, frame.metadata)
       case frame.frame_type
       when :REQUEST_RESPONSE
-        mono = request_response(Payload.new(frame.data, frame.metadata))
+        mono = (@mode == :SERVER) ? request_response(request_payload) : @responder_handler.request_response(request_payload)
         mono.subscribe(
             lambda { |payload|
               payload_frame = PayloadFrame.new(frame.stream_id, 0x40)
@@ -74,10 +77,10 @@ module RSocket
             })
       when :REQUEST_FNF
         EventMachine.defer(proc {
-          fire_and_forget(Payload.new(frame.data, frame.metadata))
+          (@mode == :SERVER) ? fire_and_forget(request_payload) : @responder_handler.fire_and_forget(request_payload)
         })
       when :REQUEST_STREAM
-        flux = request_stream(Payload.new(frame.data, frame.metadata))
+        flux = (@mode == :SERVER) ? request_stream(request_payload) : @responder_handler.request_stream(request_payload)
         flux.subscribe(
             lambda { |payload|
               payload_frame = PayloadFrame.new(frame.stream_id, 0x20)
@@ -99,7 +102,7 @@ module RSocket
         raise "request channel not implemented"
       when :METADATA_PUSH
         EventMachine.defer(proc {
-          metadata_push(Payload.new(frame.data, frame.metadata))
+          (@mode == :SERVER) ? metadata_push(request_payload) : @responder_handler.metadata_push(request_payload)
         })
       else
         ## error
