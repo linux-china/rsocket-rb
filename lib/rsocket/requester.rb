@@ -6,6 +6,7 @@ require 'rsocket/frame'
 require 'rsocket/payload'
 require 'uri'
 require 'rx'
+require 'securerandom'
 
 module RSocket
 
@@ -14,6 +15,7 @@ module RSocket
 
     #@param resp_handler_block [Proc]
     def initialize(metadata_encoding, data_encoding, setup_payload, resp_handler_block)
+      @uuid = SecureRandom.uuid
       @metadata_encoding = metadata_encoding
       @data_encoding = data_encoding
       @setup_payload = setup_payload
