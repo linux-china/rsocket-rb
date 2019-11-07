@@ -7,7 +7,7 @@ module RSocket
 
   class DuplexConnection < EventMachine::Connection
 
-    attr_accessor :mode, :responder_handler
+    attr_accessor :mode, :responder_handler, :uuid
 
     def receive_data(data)
       frame_bytes = data.unpack('C*')
