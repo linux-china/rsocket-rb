@@ -8,14 +8,9 @@ require 'rsocket/connection'
 module RSocket
 
   module RSocketResponderHandler
-    extended RSocket::AbstractRSocket
 
     def set(name, value)
       $rsocket_server.set(name, value)
-    end
-
-    def accept(setup_payload, sending_rsocket)
-      sending_rsocket
     end
 
   end
@@ -45,10 +40,12 @@ module RSocket
 
     #@param setup_frame [RSocket::SetupFrame]
     def receive_setup(setup_frame)
-      setup_payload = ConnectionSetupPayload.new(setup_frame.metadata_encoding, setup_frame.data_encoding, setup_frame.metadata, setup_frame.data)
-      @sending_rsocket = accept(setup_payload, @sending_rsocket)
-      if @sending_rsocket.nil?
-        dispose
+      if RSocketResponder.method_defined? :accept
+        setup_payload = ConnectionSetupPayload.new(setup_frame.metadata_encoding, setup_frame.data_encoding, setup_frame.metadata, setup_frame.data)
+        @sending_rsocket = accept(setup_payload, @sending_rsocket)
+        if @sending_rsocket.nil?
+          dispose
+        end
       end
     end
 
@@ -112,7 +109,7 @@ module RSocket
     end
 
     def start
-      @signature = EventMachine.start_server(@option[:host], @option[:port], RSocket::RSocketResponder,self)
+      @signature = EventMachine.start_server(@option[:host], @option[:port], RSocket::RSocketResponder, self)
     end
 
     def stop
