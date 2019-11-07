@@ -243,12 +243,33 @@ module RSocket
   class RequestStreamFrame < Frame
     def initialize(stream_id)
       super(stream_id, :REQUEST_STREAM)
-      @initial_request_num = 0
+      @initial_request_num = 0x7FFFFFFF
     end
 
     #@param buffer [RSocket::ByteBuffer]
     def parse_header(buffer)
       @initial_request_num = buffer.get_int32
+    end
+
+    def serialize
+      has_metadata = !@metadata.nil? && @metadata.length > 0
+      data_length = @data.nil? ? 0 : @data.length
+      frame_length = 10 + (has_metadata ? 3 + @metadata.length : 0) + data_length
+      bytes = Array.new(3 + frame_length)
+      buffer = RSocket::ByteBuffer.new(bytes)
+      buffer.put_int24(frame_length)
+      buffer.put_int32(@stream_id)
+      buffer.put(((0x06 << 2) | (has_metadata ? 0x01 : 0x00)))
+      buffer.put(0)
+      buffer.put_int32(@initial_request_num)
+      if has_metadata
+        buffer.put_int24(@metadata.length)
+        buffer.put_bytes(@metadata)
+      end
+      if !@data.nil? && @data.length > 0
+        buffer.put_bytes(@data)
+      end
+      bytes
     end
   end
 
