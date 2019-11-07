@@ -59,13 +59,13 @@ module RSocket
       if payload_frame.is_completed
         subject = @streams.delete(stream_id)
         unless subject.nil?
-          subject.on_next(1)
+          subject.on_next(payload_of(payload_frame.data, payload_frame.metadata))
           subject.on_completed
         end
       else
         subject = @streams[stream_id]
         unless subject.nil?
-          subject.on_next(1)
+          subject.on_next(payload_of(payload_frame.data, payload_frame.metadata))
         end
       end
     end
@@ -76,8 +76,16 @@ module RSocket
       request_response_frame.metadata = "metadata".unpack("C*")
       send_frame(request_response_frame)
       response_subject = Rx::AsyncSubject.new
-      # todo add timeout support
+      stream_id = request_response_frame.stream_id
       @streams[request_response_frame.stream_id] = response_subject
+      # add timeout support because rxRuby without timeout operator
+      # todo make it configurable
+      EventMachine::Timer.new(15) do
+        subject = @streams.delete(stream_id)
+        unless  subject.nil?
+          subject.on_error("Timeout: 15s")
+        end
+      end
       response_subject
     end
 
