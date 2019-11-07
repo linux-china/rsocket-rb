@@ -352,6 +352,18 @@ module RSocket
     def initialize
       super(0, :METADATA_PUSH)
     end
+
+    def serialize
+      frame_length = 4 + 2 + @metadata.length
+      bytes = Array.new(3 + frame_length)
+      buffer = RSocket::ByteBuffer.new(bytes)
+      buffer.put_int24(frame_length)
+      buffer.put_int32(0)
+      buffer.put((0x0C << 2) | 0x01)
+      buffer.put(0x00)
+      buffer.put_bytes(@metadata)
+      bytes
+    end
   end
 
   class ResumeFrame < Frame
