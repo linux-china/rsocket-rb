@@ -138,4 +138,16 @@ module RSocket
     ReservedMimeTypeEntry.new(0x7E, bytes)
   end
 
+  #@param data_encoding [Symbol]
+  #@param accept_encoding [Symbol]
+  #@return [Array]
+  def self.data_encoding_metadata_bytes(data_encoding, accept_encoding = nil)
+    if accept_encoding.nil?
+      return [RSocket::WellKnownTypes::MIME_TYPES_BY_SYMBOL[data_encoding].identifier]
+    else
+      return [RSocket::WellKnownTypes::MIME_TYPES_BY_SYMBOL[data_encoding].identifier,
+              RSocket::WellKnownTypes::MIME_TYPES_BY_SYMBOL[accept_encoding].identifier]
+    end
+  end
+
 end
