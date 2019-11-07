@@ -1,5 +1,7 @@
 require 'rubygems'
+require 'logger'
 require 'eventmachine'
+require 'securerandom'
 require 'rsocket/abstract_rsocket'
 require 'rsocket/frame'
 require 'rsocket/connection'
@@ -23,19 +25,21 @@ module RSocket
     attr_accessor :server, :sending_rsocket
 
     def initialize(server)
+      @uuid = SecureRandom.uuid
       @onclose = Rx::Subject.new
       @next_stream_id = 0
       @mode = :SERVER
       @server = server
+      @logger = Logger.new(STDOUT)
     end
 
     def unbind
-      puts "-- someone left!"
+      @logger.info "#{@uuid} left!"
       @server.connections.delete(self)
     end
 
     def post_init
-      puts "-- someone connected on server!"
+      @logger.info "#{@uuid} connected on server!"
       @server.connections << self
       @sending_rsocket = SendingRSocket.new(self)
     end
