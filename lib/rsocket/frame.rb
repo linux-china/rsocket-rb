@@ -158,7 +158,6 @@ module RSocket
       if !@data.nil? && @data.length > 0
         buffer.put_bytes(@data)
       end
-      p bytes
       bytes
     end
 
@@ -295,11 +294,32 @@ module RSocket
     def parse_header(buffer)
       @initial_request_num = buffer.get_int32
     end
+
+    def serialize
+      bytes = Array.new(3 + 10, 0x00)
+      buffer = RSocket::ByteBuffer.new(bytes)
+      buffer.put_int24(10)
+      buffer.put_int32(@stream_id)
+      buffer.put(0x08 << 2)
+      buffer.put(@flags)
+      buffer.put_int32(@initial_request_num)
+      bytes
+    end
   end
 
   class CancelFrame < Frame
     def initialize(stream_id)
       super(stream_id, :CANCEL)
+    end
+
+    def serialize
+      bytes = Array.new(3 + 6, 0x00)
+      buffer = RSocket::ByteBuffer.new(bytes)
+      buffer.put_int24(6)
+      buffer.put_int32(@stream_id)
+      buffer.put(0x09 << 2)
+      buffer.put(0)
+      bytes
     end
   end
 
